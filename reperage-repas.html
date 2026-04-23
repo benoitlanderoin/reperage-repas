@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🎬 Repérage Repas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap');
+  :root {
+    --bg:#0f0f0d; --surface:#191917; --card:#222220; --border:#2e2e2a;
+    --accent:#e8a020; --adim:#7a5210; --text:#e8dcc8; --muted:#5a5a52;
+    --ok:#4caf6e; --warn:#e05252;
+    --font:'DM Mono','Courier New',monospace; --disp:'Syne',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;-webkit-tap-highlight-color:transparent;}
+  ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+  .hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;}
+  .logo{background:var(--accent);color:var(--bg);width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .hdrtitle{font-family:var(--disp);font-size:13px;letter-spacing:1px;}
+  .hdrsub{font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:1px;}
+  .hdrr{margin-left:auto;display:flex;align-items:center;gap:8px;}
+  .dots{display:flex;gap:4px;align-items:center;}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:all .3s;}
+  .dot.done{background:var(--accent);}
+  .dot.active{background:var(--accent);width:18px;border-radius:3px;box-shadow:0 0 8px var(--accent);}
+
+  .sbar{background:var(--surface);border-bottom:1px solid var(--border);padding:7px 16px;font-size:9px;letter-spacing:2px;color:var(--adim);}
+  .ctn{padding:22px 16px;max-width:520px;margin:0 auto;}
+
+  .btn{border:none;cursor:pointer;font-family:var(--font);font-size:11px;letter-spacing:1px;text-transform:uppercase;transition:all .15s;border-radius:5px;padding:10px 16px;display:inline-flex;align-items:center;justify-content:center;gap:6px;}
+  .btn:active{transform:scale(.97);} .btn:disabled{opacity:.35;cursor:not-allowed;}
+  .p{background:var(--accent);color:var(--bg);}
+  .g{background:transparent;color:var(--muted);border:1px solid var(--border);}
+  .s{background:var(--surface);color:var(--text);border:1px solid var(--border);}
+  .d{background:#3d1a1a;color:var(--warn);border:1px solid #5c2a2a44;}
+  .wa{background:#1a3d26;color:var(--ok);border:1px solid #2a5c3644;text-decoration:none;}
+  .rst{background:#3d1a1a;color:var(--warn);border:1px solid #5c2a2a33;font-size:10px;padding:6px 10px;}
+  .fw{width:100%;}
+
+  .inp{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:13px;border-radius:4px;padding:10px 12px;width:100%;outline:none;transition:border-color .15s;}
+  .inp:focus{border-color:var(--accent);} .inp::placeholder{color:var(--muted);} textarea.inp{resize:vertical;}
+
+  .chip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid var(--border);color:var(--muted);background:var(--surface);transition:all .15s;user-select:none;}
+  .chip:hover{border-color:var(--accent);color:var(--text);}
+  .chip.sel{background:var(--adim);border-color:var(--accent);color:var(--accent);}
+  .cx{color:var(--warn);}
+
+  .tag{padding:3px 9px;border-radius:10px;font-size:10px;letter-spacing:1px;}
+  .tok{background:#1a3d26;color:var(--ok);border:1px solid #2a5c3644;}
+  .twt{background:#3d1a1a;color:var(--warn);border:1px solid #5c2a2a44;}
+
+  .card{background:var(--card);border-radius:8px;padding:14px;border:1px solid var(--border);}
+  .chl{border-color:#e8a02044;} .cwn{background:#3d1a1a22;border:1px solid #e0525233;}
+  .lbl{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:7px;display:block;}
+  .div{height:1px;background:var(--border);margin:20px 0;}
+  .row{display:flex;gap:8px;align-items:center;}
+  .rwrap{display:flex;gap:6px;flex-wrap:wrap;}
+  .col{display:flex;flex-direction:column;gap:14px;}
+
+  .mrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;cursor:pointer;transition:all .15s;border:1px solid transparent;margin-bottom:4px;}
+  .mrow:hover{background:var(--card);} .mrow.act{background:var(--card);border-color:var(--accent);}
+
+  .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;}
+  .tab{flex:1;padding:10px 4px;text-align:center;font-size:11px;letter-spacing:1px;cursor:pointer;background:transparent;border:none;color:var(--muted);font-family:var(--font);text-transform:uppercase;border-bottom:2px solid transparent;transition:all .15s;}
+  .tab.act{color:var(--accent);border-bottom-color:var(--accent);}
+
+  .pb{height:4px;background:var(--border);border-radius:2px;margin-bottom:20px;overflow:hidden;}
+  .pf{height:100%;background:var(--ok);border-radius:2px;transition:width .4s;}
+
+  .ovl{position:fixed;inset:0;background:#000c;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .mdl{background:var(--card);border-radius:12px;padding:28px;max-width:320px;width:100%;text-align:center;border:1px solid #e0525244;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:10px 20px;border-radius:20px;font-size:11px;letter-spacing:1px;z-index:200;white-space:nowrap;box-shadow:0 4px 20px #0006;animation:fU .2s ease;}
+  @keyframes fU{from{opacity:0;transform:translate(-50%,10px);}to{opacity:1;transform:translate(-50%,0);}}
+  @keyframes fI{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .fi{animation:fI .2s ease;}
+
+  .prev{background:var(--surface);border-radius:6px;padding:14px;border:1px solid var(--border);font-size:11px;color:var(--muted);white-space:pre-wrap;line-height:1.9;max-height:280px;overflow-y:auto;margin-bottom:14px;}
+  @media(max-width:400px){.ctn{padding:16px 12px;}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">🎬</div>
+  <div>
+    <div class="hdrtitle">REPÉRAGE REPAS</div>
+    <div class="hdrsub">COORDINATION ÉQUIPE</div>
+  </div>
+  <div class="hdrr">
+    <div class="dots" id="dots"></div>
+    <button class="btn rst" onclick="confirmReset()">↺ Nouveau repas</button>
+  </div>
+</div>
+<div class="sbar" id="sbar"></div>
+<div class="ctn" id="app"></div>
+
+<!-- Modal reset -->
+<div class="ovl" id="mReset" style="display:none">
+  <div class="mdl">
+    <div style="font-size:32px;margin-bottom:12px">🗑️</div>
+    <div style="font-family:var(--disp);font-size:18px;margin-bottom:8px">Nouveau repas ?</div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.7;margin-bottom:22px">
+      Le menu et les commandes seront effacés.<br>
+      <strong style="color:var(--ok)">L'équipe est conservée.</strong>
+    </div>
+    <div class="row" style="justify-content:center;gap:10px">
+      <button class="btn g" onclick="closeReset()">Annuler</button>
+      <button class="btn d" onclick="doReset()">Oui, repartir</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" style="display:none"></div>
+
+<script>
+const STEPS=["Infos","Menu","Équipe","Commandes"];
+const CIR=["①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩","⑪","⑫","⑬","⑭","⑮","⑯","⑰","⑱","⑲","⑳"];
+const SK="rr-v1";
+
+let S={
+  step:0,
+  cfg:{restaurant:"",date:td(),heure:"12:30"},
+  cats:[{id:1,nom:"Entrées",plats:[]},{id:2,nom:"Plats",plats:[]},{id:3,nom:"Desserts",plats:[]}],
+  equipe:[],cmds:{},membre:null,tab:"envoyer"
+};
+
+/* persistence */
+function save(){try{localStorage.setItem(SK,JSON.stringify(S.equipe));}catch(_){}}
+function load(){try{const v=localStorage.getItem(SK);if(v){const a=JSON.parse(v);if(Array.isArray(a)&&a.length)S.equipe=a;}}catch(_){}}
+
+/* utils */
+function td(){return new Date().toISOString().split("T")[0];}
+function h(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function cap(s){return s?s[0].toUpperCase()+s.slice(1):s;}
+function fmtD(d){if(!d)return"";try{return new Date(d+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});}catch{return d;}}
+function plats(){return S.cats.flatMap(c=>c.plats.map(p=>({...p,cNom:c.nom})));}
+function platBy(id){return plats().find(p=>p.id===id);}
+function waL(t){return`https://wa.me/?text=${encodeURIComponent(t)}`;}
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.style.display="block";setTimeout(()=>t.style.display="none",2500);}
+function clip(t,l){navigator.clipboard.writeText(t).then(()=>toast(`✓ ${l} copié !`)).catch(()=>toast("Copié !"));}
+function stat(n){return(S.cmds[n]?.ids?.length>0)?"ok":"wait";}
+
+const WA_ICO=`<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.533 5.856L.057 23.882a.5.5 0 0 0 .61.61l6.101-1.557A11.94 11.94 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.535-5.197-1.459l-.372-.225-3.853.984.993-3.77-.243-.389A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
+
+/* messages */
+function msgM(nom){
+  let m=`🎬 REPAS D'ÉQUIPE\n`;
+  if(S.cfg.restaurant)m+=`📍 ${S.cfg.restaurant}\n`;
+  if(S.cfg.date)m+=`📅 ${cap(fmtD(S.cfg.date))} – ${S.cfg.heure}\n`;
+  m+=`\nBonjour ${nom} ! Choisis tes plats et réponds avec les numéros 👇\n\n`;
+  let i=0;
+  S.cats.forEach(c=>{if(!c.plats.length)return;m+=`— ${c.nom.toUpperCase()} —\n`;c.plats.forEach(p=>{m+=`${CIR[i]} ${p.nom}\n`;i++;});m+="\n";});
+  if(i>0)m+=`Réponds ex: "${CIR[0]}, ${CIR[Math.min(i-1,2)]}" 🙏`;
+  return m;
+}
+
+function msgR(){
+  const{equipe:eq,cmds,cfg,cats}=S;
+  let m=`📋 COMMANDE GROUPE\n`;
+  if(cfg.restaurant)m+=`📍 ${cfg.restaurant}\n`;
+  if(cfg.date)m+=`📅 ${cap(fmtD(cfg.date))} – arrivée ${cfg.heure}\n`;
+  m+=`👥 ${eq.length} personnes\n${"─".repeat(32)}\n\n`;
+  eq.forEach((nom,i)=>{
+    const cmd=cmds[nom];m+=`${i+1}. ${nom.toUpperCase()}\n`;
+    if(!cmd||!cmd.ids.length){m+=`   (pas de réponse)\n`;return;}
+    const bc={};
+    cmd.ids.forEach(id=>{const p=platBy(id);if(p){if(!bc[p.cNom])bc[p.cNom]=[];bc[p.cNom].push(p.nom);}});
+    Object.entries(bc).forEach(([c,pp])=>{m+=`   ${c} : ${pp.join(", ")}\n`;});
+    if(cmd.comment)m+=`   💬 ${cmd.comment}\n`;
+  });
+  m+=`\n${"─".repeat(32)}\n\nRÉCAPITULATIF PAR PLAT\n`;
+  const cnt={};
+  eq.forEach(n=>(cmds[n]?.ids||[]).forEach(id=>{cnt[id]=(cnt[id]||0)+1;}));
+  cats.forEach(c=>{
+    const pp=c.plats.filter(p=>cnt[p.id]);if(!pp.length)return;
+    m+=`${c.nom} :\n`;pp.forEach(p=>m+=`  × ${cnt[p.id]}  ${p.nom}\n`);
+  });
+  const nr=eq.filter(n=>!(cmds[n]?.ids?.length));
+  if(nr.length)m+=`\n⚠️ Sans réponse : ${nr.join(", ")}\n`;
+  m+=`\nMerci de préparer les couverts à l'avance 🙏`;
+  return m;
+}
+
+/* nav */
+function goTo(n){S.step=n;render();}
+function nav(){
+  document.getElementById("dots").innerHTML=STEPS.map((_,i)=>`<div class="dot${i===S.step?" active":i<S.step?" done":""}"></div>`).join("");
+  document.getElementById("sbar").textContent=`ÉTAPE ${S.step+1} / ${STEPS.length} — ${STEPS[S.step].toUpperCase()}`;
+}
+function render(){
+  nav();const el=document.getElementById("app");
+  el.className="ctn fi";void el.offsetWidth;el.className="ctn fi";
+  [r0,r1,r2,r3][S.step](el);
+}
+
+/* ── STEP 0 ── */
+function r0(el){
+  el.innerHTML=`
+    <div style="margin-bottom:22px">
+      <div style="font-family:var(--disp);font-size:22px;margin-bottom:5px">Infos du repas</div>
+      <div style="font-size:11px;color:var(--muted)">Restaurant, date et heure d'arrivée</div>
+    </div>
+    <div class="col">
+      <div><label class="lbl">Nom du restaurant</label><input class="inp" id="r" placeholder="ex : Bistrot du Centre" value="${h(S.cfg.restaurant)}"></div>
+      <div><label class="lbl">Date</label><input class="inp" id="dd" type="date" value="${S.cfg.date}"></div>
+      <div><label class="lbl">Heure d'arrivée</label><input class="inp" id="hh" type="time" value="${S.cfg.heure}"></div>
+    </div>
+    <div style="margin-top:26px"><button class="btn p" onclick="s0()">Suivant → Menu</button></div>`;
+}
+function s0(){S.cfg.restaurant=document.getElementById("r").value;S.cfg.date=document.getElementById("dd").value;S.cfg.heure=document.getElementById("hh").value;goTo(1);}
+
+/* ── STEP 1 ── */
+function r1(el){
+  const tot=plats().length;
+  let h2=`<div style="margin-bottom:22px"><div style="font-family:var(--disp);font-size:22px;margin-bottom:5px">Menu</div><div style="font-size:11px;color:var(--muted)">${tot} plat${tot!==1?"s":""} saisi${tot!==1?"s":""}</div></div>`;
+  S.cats.forEach(c=>{
+    h2+=`<div class="card" style="margin-bottom:14px">
+      <div class="row" style="margin-bottom:10px;justify-content:space-between">
+        <span style="font-size:12px;color:var(--accent);letter-spacing:1px">${h(c.nom.toUpperCase())}</span>
+        <button class="btn d" style="padding:3px 8px;font-size:10px" onclick="rmC(${c.id})">✕</button>
+      </div>
+      <div class="rwrap" style="margin-bottom:10px">
+        ${c.plats.map(p=>`<span class="chip" onclick="rmP(${c.id},${p.id})">${h(p.nom)} <span class="cx">✕</span></span>`).join("")}
+        ${!c.plats.length?`<span style="font-size:11px;color:var(--muted)">Aucun plat</span>`:""}
+      </div>
+      <div class="row">
+        <input class="inp" id="np${c.id}" placeholder="Nom du plat…" style="font-size:12px;flex:1" onkeydown="if(event.key==='Enter')addP(${c.id})">
+        <button class="btn s" onclick="addP(${c.id})">+ Ajouter</button>
+      </div>
+    </div>`;
+  });
+  h2+=`<div class="row" style="margin-bottom:22px">
+    <input class="inp" id="nc" placeholder="Nouvelle catégorie…" style="font-size:12px;flex:1" onkeydown="if(event.key==='Enter')addC()">
+    <button class="btn s" onclick="addC()">+ Catégorie</button>
+  </div>
+  <div class="row"><button class="btn g" onclick="goTo(0)">← Retour</button><button class="btn p" onclick="goTo(2)" ${!tot?"disabled":""}>Suivant → Équipe</button></div>`;
+  el.innerHTML=h2;
+}
+function addP(cid){const e=document.getElementById(`np${cid}`);const n=e.value.trim();if(!n)return;S.cats.find(c=>c.id===cid).plats.push({id:Date.now()+Math.random(),nom:n});e.value="";r1(document.getElementById("app"));document.getElementById(`np${cid}`)?.focus();}
+function rmP(cid,pid){S.cats.find(c=>c.id===cid).plats=S.cats.find(c=>c.id===cid).plats.filter(p=>p.id!==pid);r1(document.getElementById("app"));}
+function addC(){const e=document.getElementById("nc");const n=e.value.trim();if(!n)return;S.cats.push({id:Date.now(),nom:n,plats:[]});e.value="";r1(document.getElementById("app"));}
+function rmC(cid){S.cats=S.cats.filter(c=>c.id!==cid);r1(document.getElementById("app"));}
+
+/* ── STEP 2 ── */
+function r2(el){
+  el.innerHTML=`
+    <div style="margin-bottom:22px">
+      <div style="font-family:var(--disp);font-size:22px;margin-bottom:5px">Équipe</div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:4px">
+        <span style="font-size:11px;color:var(--muted)">${S.equipe.length} membre${S.equipe.length!==1?"s":""}</span>
+        ${S.equipe.length?`<span class="tag tok" style="font-size:9px">💾 SAUVEGARDÉE</span>`:""}
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:5px;line-height:1.6">Liste mémorisée automatiquement dans ce navigateur.</div>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <input class="inp" id="nm" placeholder="Prénom Nom…" style="flex:1" onkeydown="if(event.key==='Enter')addM()">
+      <button class="btn s" onclick="addM()">+ Ajouter</button>
+    </div>
+    <div style="margin-bottom:14px">
+      <button class="btn" style="background:transparent;color:var(--muted);text-decoration:underline;padding:0;font-size:11px;letter-spacing:0;text-transform:none" onclick="toggleB()">▼ Importer plusieurs noms d'un coup</button>
+      <div id="bulk" style="display:none;margin-top:10px">
+        <textarea class="inp" id="bt" rows="4" placeholder="Un nom par ligne ou séparés par des virgules…" style="font-size:12px;margin-bottom:6px"></textarea>
+        <button class="btn s" onclick="importB()">Importer</button>
+      </div>
+    </div>
+    <div class="rwrap" style="margin-bottom:22px">
+      ${S.equipe.map(n=>`<span class="chip" onclick="rmM('${h(n)}')">${h(n)} <span class="cx">✕</span></span>`).join("")}
+      ${!S.equipe.length?`<span style="font-size:12px;color:var(--muted)">Ajoutez les membres de l'équipe</span>`:""}
+    </div>
+    <div class="row">
+      <button class="btn g" onclick="goTo(1)">← Retour</button>
+      <button class="btn p" onclick="goTo(3)" ${!S.equipe.length?"disabled":""}>Suivant → Commandes</button>
+    </div>`;
+}
+function addM(){const e=document.getElementById("nm");const n=e.value.trim();if(!n||S.equipe.includes(n))return;S.equipe.push(n);save();e.value="";r2(document.getElementById("app"));document.getElementById("nm")?.focus();}
+function rmM(n){S.equipe=S.equipe.filter(x=>x!==n);delete S.cmds[n];save();r2(document.getElementById("app"));}
+function toggleB(){const b=document.getElementById("bulk");b.style.display=b.style.display==="none"?"block":"none";}
+function importB(){const v=document.getElementById("bt").value;v.split(/[\n,;]+/).map(n=>n.trim()).filter(n=>n&&!S.equipe.includes(n)).forEach(n=>S.equipe.push(n));save();r2(document.getElementById("app"));}
+
+/* ── STEP 3 ── */
+function r3(el){
+  const{equipe:eq,cfg,tab}=S;
+  const rep=eq.filter(n=>stat(n)==="ok").length;
+  const pct=eq.length?(rep/eq.length*100):0;
+
+  let h2=`
+    <div class="card" style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-family:var(--disp);font-size:17px">${h(cfg.restaurant||"Restaurant")}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${cfg.date?cap(fmtD(cfg.date)).split(" ").slice(0,3).join(" "):""} · ${cfg.heure}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:24px;font-weight:700;color:${rep===eq.length?"var(--ok)":"var(--accent)"}">${rep}/${eq.length}</div>
+        <div style="font-size:9px;color:var(--muted);letter-spacing:1px">RÉPONSES</div>
+      </div>
+    </div>
+    <div class="pb"><div class="pf" style="width:${pct}%"></div></div>
+    <div class="tabs">
+      <button class="tab${tab==="envoyer"?" act":""}" onclick="setT('envoyer')">📤 Envoyer</button>
+      <button class="tab${tab==="saisir"?" act":""}" onclick="setT('saisir')">✏️ Saisir</button>
+      <button class="tab${tab==="recap"?" act":""}" onclick="setT('recap')">📋 Récap</button>
+    </div>`;
+
+  if(tab==="envoyer"){
+    h2+=`<div class="fi"><div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7">Envoyez le menu à chaque personne. Ils répondent avec les numéros, vous saisissez dans "Saisir".</div>`;
+    eq.forEach(nom=>{
+      const msg=msgM(nom);const st=stat(nom);
+      h2+=`<div class="card" style="margin-bottom:10px">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:14px;font-weight:500">${h(nom)}</span>
+          <span class="tag ${st==="ok"?"tok":"twt"}">${st==="ok"?"✓ Répondu":"○ En attente"}</span>
+        </div>
+        <div class="row">
+          <a class="btn wa" style="flex:1;text-decoration:none" href="${h(waL(msg))}" target="_blank">${WA_ICO} WhatsApp</a>
+          <button class="btn s" style="flex:1" onclick="clip(${JSON.stringify(msg)},'Message')">📋 Copier</button>
+        </div>
+      </div>`;
+    });
+    h2+=`</div>`;
+  }
+
+  if(tab==="saisir"){
+    h2+=`<div class="fi"><div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7">Cliquez sur un membre, cochez ses plats au fur et à mesure des réponses.</div>`;
+    eq.forEach(nom=>{
+      const nb=S.cmds[nom]?.ids?.length||0;const act=S.membre===nom;
+      h2+=`<div class="mrow${act?" act":""}" onclick="setMb('${h(nom)}')">
+        <div style="flex:1">
+          <div style="font-size:13px">${h(nom)}</div>
+          ${nb?`<div style="font-size:10px;color:var(--muted);margin-top:2px">${nb} plat${nb!==1?"s":""}</div>`:""}
+        </div>
+        <span class="tag ${stat(nom)==="ok"?"tok":"twt"}">${stat(nom)==="ok"?"✓ Répondu":"○ En attente"}</span>
+      </div>`;
+    });
+    if(S.membre){
+      const nom=S.membre;
+      h2+=`<div class="card chl" style="margin-top:14px"><div style="font-size:12px;color:var(--accent);letter-spacing:1px;margin-bottom:14px;font-weight:500">→ ${h(nom.toUpperCase())}</div>`;
+      S.cats.forEach(c=>{
+        if(!c.plats.length)return;
+        h2+=`<div style="margin-bottom:14px"><label class="lbl">${h(c.nom)}</label><div class="rwrap">`;
+        c.plats.forEach(p=>{const sel=(S.cmds[nom]?.ids||[]).includes(p.id);h2+=`<span class="chip${sel?" sel":""}" onclick="togP('${h(nom)}',${p.id})">${sel?"✓ ":""}${h(p.nom)}</span>`;});
+        h2+=`</div></div>`;
+      });
+      h2+=`<label class="lbl">Note / allergie</label><input class="inp" placeholder="Sans gluten, allergie…" value="${h(S.cmds[nom]?.comment||"")}" oninput="setN('${h(nom)}',this.value)" style="font-size:12px"></div>`;
+    }
+    h2+=`</div>`;
+  }
+
+  if(tab==="recap"){
+    const recap=msgR();const wt=eq.filter(n=>stat(n)==="wait");
+    h2+=`<div class="fi">
+      <div class="rwrap" style="margin-bottom:14px">
+        <div class="card" style="padding:8px 14px"><span style="color:var(--ok);font-size:13px">✓ ${rep}</span> <span style="font-size:10px;color:var(--muted)">répondu</span></div>
+        <div class="card" style="padding:8px 14px"><span style="color:var(--warn);font-size:13px">○ ${eq.length-rep}</span> <span style="font-size:10px;color:var(--muted)">en attente</span></div>
+      </div>`;
+    if(wt.length){h2+=`<div class="card cwn" style="margin-bottom:14px"><div style="font-size:9px;color:var(--warn);letter-spacing:2px;margin-bottom:8px">EN ATTENTE</div><div class="rwrap">${wt.map(n=>`<span style="font-size:11px;color:var(--warn);background:#3d1a1a;padding:4px 10px;border-radius:12px;border:1px solid #5c2a2a44">${h(n)}</span>`).join("")}</div></div>`;}
+    h2+=`<div class="prev">${h(recap)}</div>
+      <div class="row">
+        <a class="btn wa" style="flex:1;text-decoration:none" href="${h(waL(recap))}" target="_blank">${WA_ICO} WhatsApp restaurant</a>
+        <button class="btn s" style="flex:1" onclick="clip(msgR(),'Récap')">📋 Copier</button>
+      </div></div>`;
+  }
+
+  h2+=`<div class="div"></div><button class="btn g" onclick="goTo(2)">← Modifier équipe</button>`;
+  el.innerHTML=h2;
+}
+
+function setT(t){S.tab=t;r3(document.getElementById("app"));}
+function setMb(n){S.membre=n;r3(document.getElementById("app"));}
+function togP(nom,pid){
+  pid=Number(pid);if(!S.cmds[nom])S.cmds[nom]={ids:[],comment:""};
+  const i=S.cmds[nom].ids.indexOf(pid);
+  if(i>-1)S.cmds[nom].ids.splice(i,1);else S.cmds[nom].ids.push(pid);
+  r3(document.getElementById("app"));
+}
+function setN(nom,v){if(!S.cmds[nom])S.cmds[nom]={ids:[],comment:""};S.cmds[nom].comment=v;}
+
+/* reset */
+function confirmReset(){document.getElementById("mReset").style.display="flex";}
+function closeReset(){document.getElementById("mReset").style.display="none";}
+function doReset(){
+  S.step=0;S.cfg={restaurant:"",date:td(),heure:"12:30"};
+  S.cats=[{id:1,nom:"Entrées",plats:[]},{id:2,nom:"Plats",plats:[]},{id:3,nom:"Desserts",plats:[]}];
+  S.cmds={};S.membre=null;S.tab="envoyer";
+  closeReset();render();toast("✓ Nouveau repas — équipe conservée");
+}
+
+/* init */
+load();render();
+</script>
+</body>
+</html>
