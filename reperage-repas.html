@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🎬 Repérage Repas</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap');
+:root {
+  --bg:#0f0f0d; --sur:#191917; --card:#222220; --bor:#2e2e2a;
+  --acc:#e8a020; --adim:#7a5210; --txt:#e8dcc8; --mut:#5a5a52;
+  --ok:#4caf6e; --wn:#e05252; --info:#4a9eff;
+  --fn:'DM Mono','Courier New',monospace; --dp:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--fn);background:var(--bg);color:var(--txt);min-height:100vh;-webkit-tap-highlight-color:transparent;}
+::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-thumb{background:var(--bor);border-radius:2px;}
+
+.hdr{background:var(--sur);border-bottom:1px solid var(--bor);padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50;}
+.logo{background:var(--acc);color:var(--bg);width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;cursor:pointer;}
+.hdrtxt{cursor:pointer;}
+.hdrr{margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+
+.btn{border:none;cursor:pointer;font-family:var(--fn);font-size:11px;letter-spacing:1px;text-transform:uppercase;transition:all .15s;border-radius:5px;padding:9px 14px;display:inline-flex;align-items:center;justify-content:center;gap:5px;}
+.btn:active{transform:scale(.97);} .btn:disabled{opacity:.35;cursor:not-allowed;}
+.bp{background:var(--acc);color:var(--bg);}
+.bg2{background:transparent;color:var(--mut);border:1px solid var(--bor);}
+.bs{background:var(--sur);color:var(--txt);border:1px solid var(--bor);}
+.bd{background:#3d1a1a;color:var(--wn);border:1px solid #5c2a2a44;}
+.bw{background:#1a3d26;color:var(--ok);border:1px solid #2a5c3644;text-decoration:none;}
+.bi{background:#1a2a3d;color:var(--info);border:1px solid #2a4a6a44;}
+.fw{width:100%;}
+
+.inp{background:var(--sur);border:1px solid var(--bor);color:var(--txt);font-family:var(--fn);font-size:13px;border-radius:4px;padding:9px 11px;width:100%;outline:none;transition:border-color .15s;}
+.inp:focus{border-color:var(--acc);} .inp::placeholder{color:var(--mut);} textarea.inp{resize:vertical;}
+select.inp{cursor:pointer;}
+
+.chip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid var(--bor);color:var(--mut);background:var(--sur);transition:all .15s;user-select:none;}
+.chip:hover{border-color:var(--acc);color:var(--txt);}
+.chip.sel{background:var(--adim);border-color:var(--acc);color:var(--acc);}
+.chip.vege-chip{border-color:#2d7a3a44;color:#7fda8f;background:#1a3d1a;}
+.cx{color:var(--wn);}
+
+.tag{padding:3px 8px;border-radius:10px;font-size:10px;letter-spacing:1px;}
+.tok{background:#1a3d26;color:var(--ok);border:1px solid #2a5c3644;}
+.twt{background:#3d1a1a;color:var(--wn);border:1px solid #5c2a2a44;}
+
+.card{background:var(--card);border-radius:8px;padding:14px;border:1px solid var(--bor);}
+.card-hl{border-color:#e8a02044;} .card-wn{background:#3d1a1a22;border:1px solid #e0525233;}
+.meal-card{background:var(--card);border-radius:10px;padding:16px;border:1px solid var(--bor);margin-bottom:12px;cursor:pointer;transition:all .2s;position:relative;}
+.meal-card:hover{border-color:var(--acc);transform:translateY(-1px);}
+.meal-card.archived{opacity:.5;border-style:dashed;}
+
+.ctn{padding:20px 14px;max-width:520px;margin:0 auto;}
+.lbl{font-size:9px;letter-spacing:2px;color:var(--mut);text-transform:uppercase;margin-bottom:7px;display:block;}
+.div{height:1px;background:var(--bor);margin:18px 0;}
+.row{display:flex;gap:8px;align-items:center;}
+.rwrap{display:flex;gap:6px;flex-wrap:wrap;}
+.col{display:flex;flex-direction:column;gap:13px;}
+
+.pb{height:5px;background:var(--bor);border-radius:3px;overflow:hidden;margin-top:8px;}
+.pf{height:100%;background:var(--ok);border-radius:3px;transition:width .4s;}
+
+.tabs{display:flex;border-bottom:1px solid var(--bor);margin-bottom:18px;}
+.tab{flex:1;padding:10px 4px;text-align:center;font-size:11px;letter-spacing:1px;cursor:pointer;background:transparent;border:none;color:var(--mut);font-family:var(--fn);text-transform:uppercase;border-bottom:2px solid transparent;transition:all .15s;}
+.tab.act{color:var(--acc);border-bottom-color:var(--acc);}
+
+.mrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;cursor:pointer;transition:all .15s;border:1px solid transparent;margin-bottom:4px;}
+.mrow:hover{background:var(--card);} .mrow.act{background:var(--card);border-color:var(--acc);}
+
+.ovl{position:fixed;inset:0;background:#000c;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;}
+.mdl{background:var(--card);border-radius:12px;padding:22px;max-width:380px;width:100%;border:1px solid var(--bor);max-height:90vh;overflow-y:auto;}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);color:#fff;padding:10px 20px;border-radius:20px;font-size:11px;letter-spacing:1px;z-index:200;white-space:nowrap;box-shadow:0 4px 20px #0006;animation:fU .2s ease;}
+@keyframes fU{from{opacity:0;transform:translate(-50%,10px);}to{opacity:1;transform:translate(-50%,0);}}
+@keyframes fI{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.fi{animation:fI .25s ease;}
+
+.prev{background:var(--sur);border-radius:6px;padding:12px;border:1px solid var(--bor);font-size:11px;color:var(--mut);white-space:pre-wrap;line-height:1.9;max-height:260px;overflow-y:auto;margin-bottom:12px;}
+.sync{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;animation:pulse 2s infinite;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.sync.off{background:var(--wn);animation:none;}
+.sec-title{font-size:9px;letter-spacing:3px;color:var(--mut);text-transform:uppercase;margin:18px 0 10px;display:flex;align-items:center;gap:8px;}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--bor);}
+
+.vbtn{border:none;background:transparent;cursor:pointer;font-size:14px;padding:0 2px;transition:all .15s;border-radius:4px;}
+.vbtn:hover{background:#1a3d1a;}
+.vbtn.active{filter:none;}
+.vbtn:not(.active){filter:grayscale(1);opacity:.4;}
+
+/* ── VOTE PAGE ── */
+function renderVotePage(repasId){
+  document.getElementById("root").innerHTML=`<div style="padding:60px 20px;text-align:center;color:var(--mut);font-size:12px">⏳ Chargement...</div>`;
+
+  // Use firebase.database() directly to avoid any db=null issue
+  const fbdb = firebase.database();
+
+  Promise.all([
+    fbdb.ref("repas/"+repasId).once("value"),
+    fbdb.ref("equipe").once("value")
+  ]).then(([repasSnap, equipeSnap])=>{
+    const repas = repasSnap.val();
+    const eq = equipeSnap.val() || [];
+
+    if(!repas){
+      document.getElementById("root").innerHTML=`<div style="padding:40px;text-align:center;color:var(--mut)">Repas introuvable ou expiré.</div>`;
+      return;
+    }
+
+    const votedKey = "voted_"+repasId;
+    let alreadyVoted = localStorage.getItem(votedKey);
+    let selIds = [];
+    let selName = "";
+
+    const renderV = () => {
+      const cats = repas.cats || [];
+
+      const nameHtml = alreadyVoted ? `
+        <div style="background:#1a3d26;border:1px solid #2a5c3644;border-radius:10px;padding:20px;text-align:center;margin-bottom:20px">
+          <div style="font-size:28px;margin-bottom:8px">✅</div>
+          <div style="font-family:var(--dp);font-size:16px;color:var(--ok);margin-bottom:6px">Merci ${h(alreadyVoted)} !</div>
+          <div style="font-size:12px;color:var(--mut);margin-bottom:14px">Votre choix a bien été enregistré.</div>
+          <button class="btn bs fw" onclick="localStorage.removeItem('${votedKey}');location.reload()">Modifier mon choix</button>
+        </div>` : `
+        <div style="margin-bottom:20px">
+          <label class="lbl">Qui êtes-vous ?</label>
+          ${eq.length ? `
+          <div class="rwrap" style="margin-bottom:12px" id="nameChips">
+            ${eq.map(n=>`<span class="chip" id="chip_${h(n.replace(/\s+/g,'_'))}" onclick="pickName('${h(n)}')">${h(n)}</span>`).join("")}
+          </div>
+          <div style="font-size:10px;color:var(--mut);text-align:center;margin-bottom:8px">ou tapez votre nom</div>
+          ` : ""}
+          <input class="inp" id="voterInp" placeholder="Prénom Nom…" oninput="selName=this.value;clearChips()">
+        </div>`;
+
+      const platsHtml = !alreadyVoted ? cats.map(c=>{
+        if(!c.plats.length) return "";
+        return `<div class="vote-cat">
+          <div style="font-size:10px;letter-spacing:2px;color:var(--acc);margin-bottom:10px">${h(c.nom.toUpperCase())}</div>
+          ${c.plats.map(p=>`
+            <div class="vote-plat" id="vp_${p.id}" onclick="toggleVP('${p.id}')">
+              <div style="display:flex;align-items:center;gap:8px">
+                ${p.vege ? `<span style="font-size:14px">🌱</span>` : ""}
+                <span style="font-size:13px;color:var(--txt)">${h(p.nom)}</span>
+              </div>
+              <div class="vp-check" id="vpc_${p.id}"></div>
+            </div>`).join("")}
+        </div>`;
+      }).join("") : "";
+
+      document.getElementById("root").innerHTML = `
+      <div class="vote-wrap">
+        <div class="vote-hdr">
+          <div style="font-size:22px;margin-bottom:4px">🎬</div>
+          <div style="font-family:var(--dp);font-size:20px;color:var(--bg);margin-bottom:4px">${h(repas.restaurant||"Repas")}</div>
+          <div style="font-size:12px;color:var(--bg);opacity:.8">${cap(fmtD(repas.date))}${repas.label?" · "+repas.label:""} · ${repas.heure}</div>
+        </div>
+        <div class="vote-body">
+          ${nameHtml}
+          ${platsHtml}
+          ${!alreadyVoted ? `<div style="font-size:11px;color:var(--mut);margin-bottom:70px;text-align:center" id="selCount">0 plat sélectionné</div>` : ""}
+        </div>
+        ${!alreadyVoted ? `
+        <div class="vote-submit">
+          <button class="btn bp fw" style="font-size:13px;padding:14px" onclick="doSubmit()">✓ Valider mes choix</button>
+        </div>` : ""}
+      </div>`;
+    };
+
+    // Pick name from chips
+    window.pickName = (n) => {
+      selName = n;
+      document.getElementById("voterInp").value = n;
+      document.querySelectorAll("#nameChips .chip").forEach(c => c.classList.remove("sel"));
+      const chip = document.getElementById("chip_"+n.replace(/\s+/g,"_"));
+      if(chip) chip.classList.add("sel");
+    };
+
+    window.clearChips = () => {
+      selName = document.getElementById("voterInp")?.value || "";
+      document.querySelectorAll("#nameChips .chip").forEach(c => c.classList.remove("sel"));
+    };
+
+    window.toggleVP = (pid) => {
+      const el = document.getElementById("vp_"+pid);
+      const check = document.getElementById("vpc_"+pid);
+      const i = selIds.indexOf(pid);
+      if(i > -1){ selIds.splice(i,1); el.classList.remove("sel"); check.textContent=""; }
+      else { selIds.push(pid); el.classList.add("sel"); check.textContent="✓"; }
+      const sc = document.getElementById("selCount");
+      if(sc) sc.textContent = selIds.length+" plat"+(selIds.length!==1?"s":"")+" sélectionné"+(selIds.length!==1?"s":"");
+    };
+
+    window.doSubmit = () => {
+      const name = (selName || document.getElementById("voterInp")?.value || "").trim();
+      if(!name){ toast("⚠️ Choisissez votre nom dans la liste", true); return; }
+      if(!selIds.length){ toast("⚠️ Choisissez au moins un plat", true); return; }
+
+      // Use firebase.database() directly — guaranteed to work
+      firebase.database().ref("repas/"+repasId+"/cmds/"+name)
+        .set({ ids: selIds, comment: "" })
+        .then(()=>{
+          localStorage.setItem(votedKey, name);
+          alreadyVoted = name;
+          toast("✓ Votre choix est enregistré !");
+          renderV();
+        })
+        .catch(e => {
+          toast("⚠️ Erreur : " + e.message, true);
+          console.error(e);
+        });
+    };
+
+    renderV();
+
+  }).catch(e => {
+    document.getElementById("root").innerHTML = `<div style="padding:40px;text-align:center;color:var(--wn)">Erreur de chargement. Vérifiez votre connexion internet.</div>`;
+    console.error(e);
+  });
+}
+
+/* ── NAV ── */
+function goHome(){
+  currentRepasId=null;activeMembre=null;activeTab="envoyer";
+  document.getElementById("root").innerHTML=`
+    <div class="hdr" id="hdr">
+      <div class="logo" onclick="goHome()">🎬</div>
+      <div class="hdrtxt" onclick="goHome()">
+        <div style="font-family:var(--dp);font-size:13px;letter-spacing:1px">REPÉRAGE REPAS</div>
+        <div style="font-size:9px;color:var(--mut);letter-spacing:2px;margin-top:1px">COORDINATION ÉQUIPE</div>
+      </div>
+      <div class="hdrr">
+        <button class="btn bs" style="font-size:10px;padding:6px 10px" onclick="openModal('mTeam')">👥 Équipe</button>
+        <span class="sync off" id="syncDot"></span>
+      </div>
+    </div>
+    <div id="appBody"></div>`;
+  db.ref(".info/connected").on("value",s=>{const d=document.getElementById("syncDot");if(d)d.className=s.val()?"sync":"sync off";});
+  renderHome();
+}
+
+function setHdr(title,sub,rightHtml){
+  const h2=document.getElementById("hdr");
+  if(!h2)return;
+  document.querySelector(".hdrtxt div:first-child").textContent=title;
+  document.querySelector(".hdrtxt div:last-child").textContent=sub;
+  document.getElementById("hdrR")?document.getElementById("hdrR").innerHTML=rightHtml:null;
+}
+
+function renderHome(){
+  const el=document.getElementById("appBody");if(!el)return;
+  const arr=Object.values(allRepas).sort((a,b)=>a.date>b.date?1:-1);
+  const active=arr.filter(r=>!isArchived(r));
+  const archived=arr.filter(r=>isArchived(r));
+  let html=`<div class="ctn fi">
+    <div class="row" style="justify-content:space-between;margin-bottom:22px">
+      <div style="font-family:var(--dp);font-size:22px">Mes repas</div>
+      <button class="btn bp" onclick="renderNewRepas()">+ Nouveau repas</button>
+    </div>`;
+  if(!active.length&&!archived.length){
+    html+=`<div style="text-align:center;padding:40px 0">
+      <div style="font-size:40px;margin-bottom:14px">🍽️</div>
+      <div style="font-family:var(--dp);font-size:16px;margin-bottom:6px">Aucun repas en cours</div>
+      <div style="font-size:12px;color:var(--mut)">Créez votre premier repas pour commencer</div>
+    </div>`;
+  }
+  if(active.length){html+=`<div class="sec-title">En cours</div>`;active.forEach(r=>html+=mealCard(r,false));}
+  if(archived.length){html+=`<div class="sec-title" style="margin-top:20px">Archivés <span style="font-size:9px;color:var(--mut)">(effacés après 2 jours)</span></div>`;archived.forEach(r=>html+=mealCard(r,true));}
+  html+=`</div>`;
+  el.innerHTML=html;
+}
+
+function mealCard(r,arch){
+  const rep=(equipe||[]).filter(n=>stat(r,n)==="ok").length;
+  const tot=(equipe||[]).length;
+  const pct=tot?(rep/tot*100):0;
+  return`<div class="meal-card${arch?" archived":""}" onclick="goToRepas('${r.id}')">
+    <div class="row" style="justify-content:space-between;margin-bottom:6px">
+      <div style="font-family:var(--dp);font-size:16px">${h(r.restaurant||"Restaurant")}</div>
+      ${arch?`<span class="tag" style="background:#2a2a20;color:var(--mut);border:1px solid var(--bor);font-size:9px">Archivé</span>`:""}
+    </div>
+    <div style="font-size:11px;color:var(--mut);margin-bottom:3px">📅 ${cap(fmtD(r.date))}${r.label?" · "+h(r.label):""}</div>
+    <div style="font-size:11px;color:var(--mut);margin-bottom:7px">👥 ${rep}/${tot} réponse${rep!==1?"s":""}</div>
+    <div class="pb"><div class="pf" style="width:${pct}%"></div></div>
+    <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--mut);font-size:18px">›</div>
+  </div>`;
+}
+
+/* ── NEW REPAS ── */
+function renderNewRepas(){
+  currentRepasId=null;
+  const el=document.getElementById("appBody");if(!el)return;
+  document.querySelector(".hdrtxt div:first-child").textContent="NOUVEAU REPAS";
+  document.querySelector(".hdrtxt div:last-child").textContent="";
+  document.querySelector(".hdrr").innerHTML=`<button class="btn bg2" onclick="goHome()">← Retour</button><span class="sync" id="syncDot"></span>`;
+  db.ref(".info/connected").on("value",s=>{const d=document.getElementById("syncDot");if(d)d.className=s.val()?"sync":"sync off";});
+  window._newCats=[{id:genId(),nom:"Entrées",plats:[]},{id:genId(),nom:"Plats",plats:[]},{id:genId(),nom:"Desserts",plats:[]}];
+  el.innerHTML=`
+  <div class="ctn fi">
+    <div style="margin-bottom:20px">
+      <div style="font-family:var(--dp);font-size:22px;margin-bottom:4px">Nouveau repas</div>
+      <div style="font-size:11px;color:var(--mut)">Renseignez les infos et saisissez le menu</div>
+    </div>
+    <div class="col">
+      <div><label class="lbl">Restaurant</label><input class="inp" id="nrR" placeholder="ex : Bistrot du Centre"></div>
+      <div><label class="lbl">Date</label><input class="inp" id="nrD" type="date" value="${td()}"></div>
+      <div><label class="lbl">Service</label>
+        <select class="inp" id="nrL"><option value="déjeuner">Déjeuner</option><option value="dîner">Dîner</option><option value="autre">Autre</option></select></div>
+      <div><label class="lbl">Heure d'arrivée</label><input class="inp" id="nrH" type="time" value="12:30"></div>
+    </div>
+    <div class="div"></div>
+    <div style="font-family:var(--dp);font-size:16px;margin-bottom:6px">Menu</div>
+    <div style="font-size:11px;color:var(--mut);margin-bottom:14px">Cliquez 🌱 pour marquer un plat végétarien.</div>
+    <div id="newCatsCtn"></div>
+    <div class="row" style="margin-bottom:20px">
+      <input class="inp" id="ncInp" placeholder="Nouvelle catégorie…" style="font-size:12px;flex:1" onkeydown="if(event.key==='Enter')addCatNew()">
+      <button class="btn bs" onclick="addCatNew()">+ Catégorie</button>
+    </div>
+    <button class="btn bp fw" onclick="createRepas()">Créer ce repas →</button>
+  </div>`;
+  renderNewCats();
+}
+
+function platHtml(p,catId,mode){
+  const vege=p.vege||false;
+  const rmFn=mode==="new"?`rmPlatNew('${catId}','${p.id}')`:`rmPlatEdit('${catId}','${p.id}')`;
+  const vegeFn=mode==="new"?`toggleVegeNew('${catId}','${p.id}')`:`toggleVegeEdit('${catId}','${p.id}')`;
+  return`<span class="chip${vege?" vege-chip":""}" style="gap:4px">
+    ${vege?"🌱 ":""}${h(p.nom)}
+    <button class="vbtn${vege?" active":""}" onclick="event.stopPropagation();${vegeFn}" title="Végétarien">🌱</button>
+    <span class="cx" onclick="event.stopPropagation();${rmFn}">✕</span>
+  </span>`;
+}
+
+function renderNewCats(){
+  const el=document.getElementById("newCatsCtn");if(!el)return;
+  let html="";
+  window._newCats.forEach(c=>{
+    html+=`<div class="card" style="margin-bottom:12px">
+      <div class="row" style="margin-bottom:8px;justify-content:space-between">
+        <span style="font-size:12px;color:var(--acc);letter-spacing:1px">${h(c.nom.toUpperCase())}</span>
+        <button class="btn bd" style="padding:3px 7px;font-size:10px" onclick="rmCatNew('${c.id}')">✕</button>
+      </div>
+      <div class="rwrap" style="margin-bottom:8px">
+        ${c.plats.map(p=>platHtml(p,c.id,"new")).join("")}
+        ${!c.plats.length?`<span style="font-size:11px;color:var(--mut)">Aucun plat</span>`:""}
+      </div>
+      <div class="row">
+        <input class="inp" id="np_${c.id}" placeholder="Nom du plat…" style="font-size:12px;flex:1" onkeydown="if(event.key==='Enter')addPlatNew('${c.id}')">
+        <button class="btn bs" onclick="addPlatNew('${c.id}')">+ Ajouter</button>
+      </div>
+    </div>`;
+  });
+  el.innerHTML=html;
+}
+
+function addPlatNew(cid){const e=document.getElementById(`np_${cid}`);const n=e.value.trim();if(!n)return;window._newCats.find(c=>c.id===cid).plats.push({id:genId(),nom:n,vege:false});e.value="";renderNewCats();document.getElementById(`np_${cid}`)?.focus();}
+function rmPlatNew(cid,pid){window._newCats.find(c=>c.id===cid).plats=window._newCats.find(c=>c.id===cid).plats.filter(p=>p.id!==pid);renderNewCats();}
+function toggleVegeNew(cid,pid){const p=window._newCats.find(c=>c.id===cid)?.plats.find(p=>p.id===pid);if(p){p.vege=!p.vege;renderNewCats();}}
+function addCatNew(){const e=document.getElementById("ncInp");const n=e.value.trim();if(!n)return;window._newCats.push({id:genId(),nom:n,plats:[]});e.value="";renderNewCats();}
+function rmCatNew(cid){window._newCats=window._newCats.filter(c=>c.id!==cid);renderNewCats();}
+
+function createRepas(){
+  const resto=document.getElementById("nrR").value.trim();
+  const date=document.getElementById("nrD").value;
+  const label=document.getElementById("nrL").value;
+  const heure=document.getElementById("nrH").value;
+  if(!resto){toast("⚠️ Indiquez le restaurant",true);return;}
+  if(!date){toast("⚠️ Indiquez la date",true);return;}
+  if(!(window._newCats||[]).reduce((s,c)=>s+c.plats.length,0)){toast("⚠️ Ajoutez au moins un plat",true);return;}
+  const id=genId();
+  db.ref(`repas/${id}`).set({id,restaurant:resto,date,label,heure,cats:window._newCats,cmds:{},createdAt:Date.now()})
+    .then(()=>{toast("✓ Repas créé !");goToRepas(id);})
+    .catch(()=>toast("Erreur de connexion",true));
+}
+
+/* ── EDIT MENU ── */
+function openEditMenu(){
+  if(!currentRepasId)return;
+  renderEditCats();
+  openModal("mEditMenu");
+}
+function renderEditCats(){
+  const r=allRepas[currentRepasId];if(!r)return;
+  const el=document.getElementById("editCatsCtn");if(!el)return;
+  const cats=r.cats||[];
+  let html="";
+  cats.forEach(c=>{
+    html+=`<div class="card" style="margin-bottom:10px">
+      <div class="row" style="margin-bottom:8px;justify-content:space-between">
+        <span style="font-size:12px;color:var(--acc);letter-spacing:1px">${h(c.nom.toUpperCase())}</span>
+        <button class="btn bd" style="padding:3px 7px;font-size:10px" onclick="rmCatEdit('${c.id}')">✕ Cat.</button>
+      </div>
+      <div class="rwrap" style="margin-bottom:8px">
+        ${c.plats.map(p=>platHtml(p,c.id,"edit")).join("")}
+        ${!c.plats.length?`<span style="font-size:11px;color:var(--mut)">Aucun plat</span>`:""}
+      </div>
+      <div class="row">
+        <input class="inp" id="ep_${c.id}" placeholder="Nom du plat…" style="font-size:12px;flex:1" onkeydown="if(event.key==='Enter')addPlatEdit('${c.id}')">
+        <button class="btn bs" onclick="addPlatEdit('${c.id}')">+ Plat</button>
+      </div>
+    </div>`;
+  });
+  el.innerHTML=html;
+}
+function saveCats(cats){if(currentRepasId)db.ref(`repas/${currentRepasId}/cats`).set(cats).then(()=>renderEditCats());}
+function getCats(){return JSON.parse(JSON.stringify((allRepas[currentRepasId]||{}).cats||[]));}
+function addPlatEdit(cid){const e=document.getElementById(`ep_${cid}`);const n=e.value.trim();if(!n)return;const cats=getCats();const cat=cats.find(c=>c.id===cid);if(!cat)return;cat.plats.push({id:genId(),nom:n,vege:false});e.value="";saveCats(cats);}
+function rmPlatEdit(cid,pid){const cats=getCats();const cat=cats.find(c=>c.id===cid);if(!cat)return;cat.plats=cat.plats.filter(p=>p.id!==pid);saveCats(cats);}
+function toggleVegeEdit(cid,pid){const cats=getCats();const cat=cats.find(c=>c.id===cid);if(!cat)return;const p=cat.plats.find(p=>p.id===pid);if(!p)return;p.vege=!p.vege;saveCats(cats);}
+function addCatEdit(){const e=document.getElementById("editNcInp");const n=e.value.trim();if(!n)return;const cats=getCats();cats.push({id:genId(),nom:n,plats:[]});e.value="";saveCats(cats);}
+function rmCatEdit(cid){const cats=getCats();saveCats(cats.filter(c=>c.id!==cid));}
+
+/* ── REPAS DETAIL ── */
+function goToRepas(id){
+  currentRepasId=id;activeMembre=null;activeTab="envoyer";
+  const r=allRepas[id];if(!r)return;
+  document.querySelector(".hdrtxt div:first-child").textContent=h(r.restaurant||"Repas");
+  document.querySelector(".hdrtxt div:last-child").textContent=fmtDs(r.date)+(r.label?" · "+r.label:"");
+  document.querySelector(".hdrr").innerHTML=`
+    <button class="btn bs" style="font-size:10px;padding:5px 8px" onclick="openModal('mTeam')">👥</button>
+    <button class="btn bs" style="font-size:10px;padding:5px 8px" onclick="openEditMenu()">✏️</button>
+    <button class="btn bd" style="font-size:10px;padding:5px 8px" onclick="askDel('${id}')">🗑️</button>
+    <span class="sync" id="syncDot"></span>`;
+  db.ref(".info/connected").on("value",s=>{const d=document.getElementById("syncDot");if(d)d.className=s.val()?"sync":"sync off";});
+  renderRepasDetail(r);
+}
+
+function renderRepasDetail(repas){
+  const el=document.getElementById("appBody");if(!el)return;
+  const eq=equipe||[];
+  const rep=eq.filter(n=>stat(repas,n)==="ok").length;
+  const pct=eq.length?(rep/eq.length*100):0;
+  const arch=isArchived(repas);
+  const waiting=eq.filter(n=>stat(repas,n)==="wait");
+
+  let html=`<div class="ctn fi">`;
+  if(arch)html+=`<div style="background:#3d1a1a22;border:1px solid #e0525233;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--wn);text-align:center">📦 Repas archivé — effacement auto dans 2 jours</div>`;
+
+  html+=`
+    <div class="card" style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-family:var(--dp);font-size:17px">${h(repas.restaurant||"Restaurant")}</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:3px">${fmtDs(repas.date)}${repas.label?" · "+h(repas.label):""} · ${repas.heure}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:24px;font-weight:700;color:${rep===eq.length&&eq.length?"var(--ok)":"var(--acc)"}">${rep}/${eq.length}</div>
+        <div style="font-size:9px;color:var(--mut);letter-spacing:1px">RÉPONSES</div>
+      </div>
+    </div>
+    <div class="pb" style="margin-bottom:14px"><div class="pf" style="width:${pct}%"></div></div>
+
+    <!-- VOTE LINK BANNER -->
+    <div style="background:#1a2a3d;border:1px solid #4a9eff33;border-radius:8px;padding:12px 14px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div>
+        <div style="font-size:10px;color:var(--info);letter-spacing:1px;margin-bottom:3px">🔗 LIEN DE VOTE</div>
+        <div style="font-size:11px;color:var(--mut);line-height:1.5">Partagez pour que l'équipe vote directement</div>
+      </div>
+      <button class="btn bi" style="flex-shrink:0;font-size:11px" onclick="showVoteLink('${repas.id}')">Partager</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab${activeTab==="envoyer"?" act":""}" onclick="setTab('envoyer')">📤 Envoyer</button>
+      <button class="tab${activeTab==="saisir"?" act":""}" onclick="setTab('saisir')">✏️ Saisir</button>
+      <button class="tab${activeTab==="recap"?" act":""}" onclick="setTab('recap')">📋 Récap</button>
+    </div>`;
+
+  /* TAB ENVOYER */
+  if(activeTab==="envoyer"){
+    html+=`<div class="fi">`;
+
+    // Rappels for non-responders
+    if(waiting.length){
+      html+=`<div class="card card-wn" style="margin-bottom:14px">
+        <div style="font-size:9px;color:var(--wn);letter-spacing:2px;margin-bottom:10px">⏰ RAPPELS À ENVOYER</div>`;
+      waiting.forEach(nom=>{
+        html+=`<div class="row" style="justify-content:space-between;padding:6px 0;border-bottom:1px solid #5c2a2a22">
+          <span style="font-size:13px;color:var(--txt)">${h(nom)}</span>
+          <button class="btn bd" style="font-size:10px;padding:5px 10px" onclick="sendReminder('${h(nom)}','${repas.id}')">
+            ${WA_ICO} Rappel
+          </button>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+
+    if(!eq.length){
+      html+=`<div style="text-align:center;padding:20px;color:var(--mut);font-size:12px">Aucun membre.<br><button class="btn bs" style="margin-top:10px" onclick="openModal('mTeam')">+ Gérer l'équipe</button></div>`;
+    }else{
+      html+=`<div style="font-size:11px;color:var(--mut);margin-bottom:12px;line-height:1.7">
+        Envoyez le menu à chaque personne, ou utilisez le <strong style="color:var(--info)">lien de vote</strong> ci-dessus pour qu'ils répondent directement.
+      </div>`;
+      eq.forEach(nom=>{
+        const msg=buildMsgM(repas,nom);const st=stat(repas,nom);
+        html+=`<div class="card" style="margin-bottom:10px">
+          <div class="row" style="justify-content:space-between;margin-bottom:10px">
+            <span style="font-size:14px;font-weight:500">${h(nom)}</span>
+            <span class="tag ${st==="ok"?"tok":"twt"}">${st==="ok"?"✓ Répondu":"○ En attente"}</span>
+          </div>
+          <div class="row">
+            <a class="btn bw" style="flex:1;text-decoration:none" href="${h(waL(msg))}" target="_blank">${WA_ICO} WhatsApp</a>
+            <button class="btn bs" style="flex:1" onclick="clip(${JSON.stringify(msg)},'Message')">📋 Copier</button>
+          </div>
+        </div>`;
+      });
+    }
+    html+=`</div>`;
+  }
+
+  /* TAB SAISIR */
+  if(activeTab==="saisir"){
+    html+=`<div class="fi"><div style="font-size:11px;color:var(--mut);margin-bottom:12px;line-height:1.7">Cliquez sur un membre, cochez ses plats manuellement si besoin.</div>`;
+    if(!eq.length){
+      html+=`<div style="text-align:center;padding:20px;color:var(--mut);font-size:12px">Aucun membre.</div>`;
+    }else{
+      eq.forEach(nom=>{
+        const nb=(repas.cmds||{})[nom]?.ids?.length||0;
+        html+=`<div class="mrow${activeMembre===nom?" act":""}" onclick="setMb('${h(nom)}')">
+          <div style="flex:1"><div style="font-size:13px">${h(nom)}</div>
+            ${nb?`<div style="font-size:10px;color:var(--mut);margin-top:2px">${nb} plat${nb!==1?"s":""}</div>`:""}
+          </div>
+          <span class="tag ${stat(repas,nom)==="ok"?"tok":"twt"}">${stat(repas,nom)==="ok"?"✓ Répondu":"○ En attente"}</span>
+        </div>`;
+      });
+      if(activeMembre){
+        const nom=activeMembre;
+        const ids=(repas.cmds||{})[nom]?.ids||[];
+        const comment=(repas.cmds||{})[nom]?.comment||"";
+        html+=`<div class="card card-hl" style="margin-top:12px">
+          <div style="font-size:12px;color:var(--acc);letter-spacing:1px;margin-bottom:12px;font-weight:500">→ ${h(nom.toUpperCase())}</div>`;
+        (repas.cats||[]).forEach(c=>{
+          if(!c.plats.length)return;
+          html+=`<div style="margin-bottom:12px"><label class="lbl">${h(c.nom)}</label><div class="rwrap">`;
+          c.plats.forEach(p=>{
+            const sel=ids.includes(p.id);
+            html+=`<span class="chip${sel?" sel":""}" onclick="toggleP('${h(nom)}','${p.id}')" style="gap:4px">
+              ${p.vege?`<span style="font-size:11px">🌱</span>`:""}${sel?"✓ ":""}${h(p.nom)}
+            </span>`;
+          });
+          html+=`</div></div>`;
+        });
+        html+=`<label class="lbl">Note / allergie</label>
+          <input class="inp" placeholder="Sans gluten, allergie…" value="${h(comment)}" oninput="setNote('${h(nom)}',this.value)" style="font-size:12px">
+        </div>`;
+      }
+    }
+    html+=`</div>`;
+  }
+
+  /* TAB RECAP */
+  if(activeTab==="recap"){
+    const recap=buildRecap(repas);
+    html+=`<div class="fi">
+      <div class="rwrap" style="margin-bottom:12px">
+        <div class="card" style="padding:7px 12px"><span style="color:var(--ok);font-size:13px">✓ ${rep}</span> <span style="font-size:10px;color:var(--mut)">répondu</span></div>
+        <div class="card" style="padding:7px 12px"><span style="color:var(--wn);font-size:13px">○ ${eq.length-rep}</span> <span style="font-size:10px;color:var(--mut)">en attente</span></div>
+      </div>`;
+    if(waiting.length){
+      html+=`<div class="card card-wn" style="margin-bottom:12px">
+        <div style="font-size:9px;color:var(--wn);letter-spacing:2px;margin-bottom:7px">EN ATTENTE</div>
+        <div class="rwrap">${waiting.map(n=>`<span style="font-size:11px;color:var(--wn);background:#3d1a1a;padding:4px 10px;border-radius:12px;border:1px solid #5c2a2a44">${h(n)}</span>`).join("")}</div>
+      </div>`;
+    }
+    html+=`<div class="prev">${h(recap)}</div>
+      <div class="row">
+        <a class="btn bw" style="flex:1;text-decoration:none" href="${h(waL(recap))}" target="_blank">${WA_ICO} WhatsApp restaurant</a>
+        <button class="btn bs" style="flex:1" onclick="clip(${JSON.stringify(recap)},'Récap')">📋 Copier</button>
+      </div>
+    </div>`;
+  }
+
+  html+=`<div class="div"></div>
+    <div class="row" style="flex-wrap:wrap;gap:8px">
+      <button class="btn bg2" onclick="goHome()">← Accueil</button>
+      <button class="btn bs" onclick="openEditMenu()">✏️ Menu</button>
+      <button class="btn bs" onclick="openModal('mTeam')">👥 Équipe</button>
+    </div>
+  </div>`;
+  el.innerHTML=html;
+}
+
+/* ── ACTIONS ── */
+function setTab(t){activeTab=t;if(currentRepasId&&allRepas[currentRepasId])renderRepasDetail(allRepas[currentRepasId]);}
+function setMb(n){activeMembre=n;if(currentRepasId&&allRepas[currentRepasId])renderRepasDetail(allRepas[currentRepasId]);}
+function toggleP(nom,pid){
+  if(!currentRepasId)return;
+  const path=`repas/${currentRepasId}/cmds/${nom}`;
+  db.ref(path).once("value",s=>{
+    const cur=s.val()||{ids:[],comment:""};
+    const ids=[...(cur.ids||[])];const i=ids.indexOf(pid);
+    if(i>-1)ids.splice(i,1);else ids.push(pid);
+    db.ref(path).set({ids,comment:cur.comment||""});
+  });
+}
+function setNote(nom,v){if(currentRepasId)db.ref(`repas/${currentRepasId}/cmds/${nom}/comment`).set(v);}
+function askDel(id){document.getElementById("btnDelConfirm").onclick=()=>deleteMeal(id);openModal("mDel");}
+function deleteMeal(id){db.ref(`repas/${id}`).remove().then(()=>{closeModal("mDel");toast("✓ Repas effacé");goHome();}).catch(()=>toast("Erreur",true));}
+
+/* ── TEAM ── */
+function refreshTeamChips(){
+  const el=document.getElementById("teamChips");if(!el)return;
+  el.innerHTML=(equipe||[]).map(n=>`<span class="chip" onclick="rmM('${h(n)}')">${h(n)} <span class="cx">✕</span></span>`).join("")||`<span style="font-size:11px;color:var(--mut)">Aucun membre</span>`;
+}
+function addM(){const e=document.getElementById("nmInp");const n=e.value.trim();if(!n||equipe.includes(n))return;db.ref("equipe").set([...equipe,n]).then(()=>e.value="");}
+function rmM(n){db.ref("equipe").set(equipe.filter(x=>x!==n));}
+function toggleBulk(){const b=document.getElementById("bulkZ");b.style.display=b.style.display==="none"?"block":"none";}
+function importBulk(){
+  const v=document.getElementById("bulkT").value;
+  const noms=v.split(/[\n,;]+/).map(n=>n.trim()).filter(n=>n&&!equipe.includes(n));
+  db.ref("equipe").set([...equipe,...noms]).then(()=>{document.getElementById("bulkT").value="";document.getElementById("bulkZ").style.display="none";});
+}
+
+/* ── MESSAGES ── */
+function buildMsgM(repas,nom){
+  let m=`🎬 REPAS D'ÉQUIPE\n`;
+  if(repas.restaurant)m+=`📍 ${repas.restaurant}\n`;
+  if(repas.date)m+=`📅 ${cap(fmtD(repas.date))}${repas.label?" – "+repas.label:""} · ${repas.heure}\n`;
+  m+=`\nBonjour ${nom} ! Choisis tes plats et réponds avec les numéros 👇\n\n`;
+  let i=0;
+  (repas.cats||[]).forEach(c=>{
+    if(!c.plats.length)return;
+    m+=`— ${c.nom.toUpperCase()} —\n`;
+    c.plats.forEach(p=>{m+=`${CIR[i]} ${p.nom}${p.vege?" 🌱":""}\n`;i++;});
+    m+="\n";
+  });
+  if(i>0)m+=`Réponds ex: "${CIR[0]}, ${CIR[Math.min(i-1,2)]}" 🙏`;
+  return m;
+}
+
+function buildRecap(repas){
+  const eq=equipe||[];const cmds=repas.cmds||{};
+  let m=`📋 COMMANDE GROUPE\n`;
+  if(repas.restaurant)m+=`📍 ${repas.restaurant}\n`;
+  if(repas.date)m+=`📅 ${cap(fmtD(repas.date))}${repas.label?" – "+repas.label:""} · arrivée ${repas.heure}\n`;
+  m+=`👥 ${eq.length} personnes\n${"─".repeat(32)}\n\n`;
+  eq.forEach((nom,i)=>{
+    const cmd=cmds[nom];m+=`${i+1}. ${nom.toUpperCase()}\n`;
+    if(!cmd||!cmd.ids?.length){m+=`   (pas de réponse)\n`;return;}
+    const byC={};
+    cmd.ids.forEach(id=>{const p=platById(repas.cats,id);if(p){if(!byC[p.cNom])byC[p.cNom]=[];byC[p.cNom].push(p.nom+(p.vege?" 🌱":""));}});
+    Object.entries(byC).forEach(([c,pp])=>{m+=`   ${c} : ${pp.join(", ")}\n`;});
+    if(cmd.comment)m+=`   💬 ${cmd.comment}\n`;
+  });
+  m+=`\n${"─".repeat(32)}\n\nRÉCAPITULATIF PAR PLAT\n`;
+  const cnt={};
+  eq.forEach(n=>(cmds[n]?.ids||[]).forEach(id=>{cnt[id]=(cnt[id]||0)+1;}));
+  (repas.cats||[]).forEach(c=>{
+    const pp=c.plats.filter(p=>cnt[p.id]);if(!pp.length)return;
+    m+=`${c.nom} :\n`;pp.forEach(p=>m+=`  × ${cnt[p.id]}  ${p.nom}${p.vege?" 🌱":""}\n`);
+  });
+  const nr=eq.filter(n=>!cmds[n]?.ids?.length);
+  if(nr.length)m+=`\n⚠️ Sans réponse : ${nr.join(", ")}\n`;
+  m+=`\nMerci de préparer les couverts à l'avance 🙏`;
+  return m;
+}
+
+/* ── INIT ── */
+initFB();
+// Check if vote mode
+const params=new URLSearchParams(window.location.search);
+const voteId=params.get("vote");
+if(voteId){
+  // Show vote page
+  document.getElementById("root").innerHTML=`<div style="padding:40px;text-align:center;color:var(--mut);font-size:12px">Chargement...</div>`;
+  // Wait for FB init
+  setTimeout(()=>renderVotePage(voteId),1000);
+}else{
+  goHome();
+}
+</script>
+</body>
+</html>
